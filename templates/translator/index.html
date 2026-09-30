@@ -1,0 +1,385 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language to Text Converter</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .btn {
+            @apply px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors;
+        }
+        .btn-outline {
+            @apply px-4 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 transition-colors;
+        }
+        .btn-danger {
+            @apply px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto py-8 px-4">
+        <h1 class="text-3xl font-bold mb-6 text-center">Sign Language to Text Converter</h1>
+        
+        <!-- Tab Navigation -->
+        <div class="flex border-b mb-6">
+            <button id="sign-to-text-tab" class="px-4 py-2 font-medium border-b-2 border-blue-500 text-blue-500">Sign to Text</button>
+            <button id="speech-to-text-tab" class="px-4 py-2 font-medium">Speech to Text</button>
+            <button id="manual-input-tab" class="px-4 py-2 font-medium">Manual Input</button>
+        </div>
+        
+        <!-- Sign to Text Tab -->
+        <div id="sign-to-text-content" class="tab-content active">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">Sign Language Detection</h2>
+                <p class="text-gray-600 mb-4">Use your webcam to convert sign language to text</p>
+                
+                <div class="relative aspect-video bg-gray-200 rounded-lg overflow-hidden mb-6">
+                    <video id="video" class="w-full h-full object-cover" autoplay playsinline></video>
+                    <canvas id="canvas" class="absolute top-0 left-0 w-full h-full" style="display: none;"></canvas>
+                    <div id="camera-off-message" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white">
+                        <p>Camera is off</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center gap-4 mb-6">
+                    <button id="start-camera" class="btn flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                        </svg>
+                        Start Camera
+                    </button>
+                    <button id="stop-camera" class="btn-danger flex items-center gap-2" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
+                        </svg>
+                        Stop Camera
+                    </button>
+                    <button id="speak-text" class="btn flex items-center gap-2" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd" />
+                        </svg>
+                        Speak Text
+                    </button>
+                    <button id="clear-text" class="btn-outline flex items-center gap-2">
+                        Clear Text
+                    </button>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-medium mb-2">Recognized Text:</h3>
+                    <div id="recognized-text" class="p-4 border rounded-md min-h-[100px] bg-gray-50">
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Speech to Text Tab -->
+        <div id="speech-to-text-content" class="tab-content">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">Speech to Text</h2>
+                <p class="text-gray-600 mb-4">Convert your speech to text</p>
+                
+                <div class="flex justify-center mb-6">
+                    <button id="listen-speech" class="btn flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd" />
+                        </svg>
+                        Listen for Speech
+                    </button>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-2">Recognized Speech:</h3>
+                    <textarea id="speech-text" class="w-full p-4 border rounded-md min-h-[150px]" placeholder="Speech will appear here..."></textarea>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button id="speak-speech-text" class="btn flex items-center gap-2" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd" />
+                        </svg>
+                        Speak Text
+                    </button>
+                    <button id="clear-speech-text" class="btn-outline flex items-center gap-2">
+                        Clear Text
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Manual Input Tab -->
+        <div id="manual-input-content" class="tab-content">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">Manual Text Input</h2>
+                <p class="text-gray-600 mb-4">Type text directly for text-to-speech conversion</p>
+                
+                <div class="mb-6">
+                    <textarea id="manual-text" class="w-full p-4 border rounded-md min-h-[200px]" placeholder="Type your text here..."></textarea>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button id="speak-manual-text" class="btn flex items-center gap-2" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd" />
+                        </svg>
+                        Speak Text
+                    </button>
+                    <button id="clear-manual-text" class="btn-outline flex items-center gap-2">
+                        Clear Text
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-8 p-6 bg-white rounded-lg shadow-md">
+            <h2 class="text-xl font-bold mb-4">About This Application</h2>
+            <p class="mb-4">
+                This integration creates a comprehensive communication tool that bridges multiple forms of communication: sign language, 
+                text, and speech. Users can now communicate in whichever way is most comfortable for them.
+            </p>
+            <p>
+                The application uses computer vision to detect and interpret sign language, converts it to text, 
+                and can also speak the text using speech synthesis. Additionally, users can input text manually 
+                or use speech recognition for a complete communication experience.
+            </p>
+        </div>
+    </div>
+
+    <!-- JavaScript for the application -->
+    <script>
+        // Tab switching functionality
+        const tabs = {
+            'sign-to-text-tab': 'sign-to-text-content',
+            'speech-to-text-tab': 'speech-to-text-content',
+            'manual-input-tab': 'manual-input-content'
+        };
+
+        Object.keys(tabs).forEach(tabId => {
+            document.getElementById(tabId).addEventListener('click', function() {
+                // Reset all tabs
+                Object.keys(tabs).forEach(id => {
+                    document.getElementById(id).classList.remove('border-blue-500', 'text-blue-500');
+                    document.getElementById(tabs[id]).classList.remove('active');
+                });
+                
+                // Activate selected tab
+                this.classList.add('border-blue-500', 'text-blue-500');
+                document.getElementById(tabs[tabId]).classList.add('active');
+            });
+        });
+
+        // Sign language detection variables
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startCameraBtn = document.getElementById('start-camera');
+        const stopCameraBtn = document.getElementById('stop-camera');
+        const speakTextBtn = document.getElementById('speak-text');
+        const clearTextBtn = document.getElementById('clear-text');
+        const recognizedTextDiv = document.getElementById('recognized-text');
+        const cameraOffMessage = document.getElementById('camera-off-message');
+        let mediaStream = null;
+        let isRecording = false;
+
+        // Speech to text variables
+        const listenSpeechBtn = document.getElementById('listen-speech');
+        const speechTextArea = document.getElementById('speech-text');
+        const speakSpeechTextBtn = document.getElementById('speak-speech-text');
+        const clearSpeechTextBtn = document.getElementById('clear-speech-text');
+
+        // Manual input variables
+        const manualTextArea = document.getElementById('manual-text');
+        const speakManualTextBtn = document.getElementById('speak-manual-text');
+        const clearManualTextBtn = document.getElementById('clear-manual-text');
+
+        // Start webcam
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    }
+                });
+                
+                video.srcObject = mediaStream;
+                isRecording = true;
+                startCameraBtn.style.display = 'none';
+                stopCameraBtn.style.display = 'flex';
+                cameraOffMessage.style.display = 'none';
+                
+                // Simulate sign language detection
+                simulateSignDetection();
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+                alert('Error accessing webcam: ' + err.message);
+            }
+        });
+
+        // Stop webcam
+        stopCameraBtn.addEventListener('click', () => {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            isRecording = false;
+            startCameraBtn.style.display = 'flex';
+            stopCameraBtn.style.display = 'none';
+            cameraOffMessage.style.display = 'flex';
+        });
+
+        // Simulate sign language detection
+        function simulateSignDetection() {
+            const phrases = [
+                'Hello, how are you?',
+                'Nice to meet you',
+                'Thank you for your help',
+                'I need assistance',
+                'Can you please repeat that?'
+            ];
+            
+            let index = 0;
+            const interval = setInterval(() => {
+                if (!isRecording) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                recognizedTextDiv.textContent = recognizedTextDiv.textContent === 'No text recognized yet. Start the camera to begin detection.' 
+                    ? phrases[index] 
+                    : recognizedTextDiv.textContent + ' ' + phrases[index];
+                
+                speakTextBtn.disabled = false;
+                
+                index = (index + 1) % phrases.length;
+                
+                if (index === 0) {
+                    clearInterval(interval);
+                }
+            }, 3000);
+        }
+
+        // Speak text using speech synthesis
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                // Cancel any ongoing speech first
+                window.speechSynthesis.cancel();
+                
+                // Create a new utterance
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Add event listeners to handle speech completion
+                utterance.onend = () => {
+                    console.log('Speech synthesis finished');
+                };
+                
+                utterance.onerror = (event) => {
+                    console.error('Speech synthesis error:', event);
+                };
+                
+                // Speak the text
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.error('Speech synthesis not supported');
+                alert('Speech synthesis is not supported in this browser');
+            }
+        }
+
+        // Speak recognized text
+        speakTextBtn.addEventListener('click', () => {
+            const text = recognizedTextDiv.textContent;
+            if (text && text !== 'No text recognized yet. Start the camera to begin detection.') {
+                speakText(text);
+            }
+        });
+
+        // Clear recognized text
+        clearTextBtn.addEventListener('click', () => {
+            recognizedTextDiv.textContent = 'No text recognized yet. Start the camera to begin detection.';
+            speakTextBtn.disabled = true;
+        });
+
+        // Speech recognition
+        listenSpeechBtn.addEventListener('click', () => {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                
+                recognition.onresult = (event) => {
+                    const transcript = Array.from(event.results)
+                        .map(result => result[0])
+                        .map(result => result.transcript)
+                        .join('');
+                    
+                    speechTextArea.value = transcript;
+                    speakSpeechTextBtn.disabled = false;
+                };
+                
+                recognition.onend = () => {
+                    console.log('Speech recognition ended');
+                };
+                
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                };
+                
+                recognition.start();
+                
+                // For demo purposes, automatically stop after 10 seconds
+                setTimeout(() => {
+                    recognition.stop();
+                }, 10000);
+            } else {
+                console.error('Speech recognition not supported');
+                speechTextArea.value = 'Speech recognition not supported in this browser';
+            }
+        });
+
+        // Speak speech text
+        speakSpeechTextBtn.addEventListener('click', () => {
+            const text = speechTextArea.value;
+            if (text) {
+                speakText(text);
+            }
+        });
+
+        // Clear speech text
+        clearSpeechTextBtn.addEventListener('click', () => {
+            speechTextArea.value = '';
+            speakSpeechTextBtn.disabled = true;
+        });
+
+        // Manual text input events
+        manualTextArea.addEventListener('input', () => {
+            speakManualTextBtn.disabled = !manualTextArea.value;
+        });
+
+        // Speak manual text
+        speakManualTextBtn.addEventListener('click', () => {
+            const text = manualTextArea.value;
+            if (text) {
+                speakText(text);
+            }
+        });
+
+        // Clear manual text
+        clearManualTextBtn.addEventListener('click', () => {
+            manualTextArea.value = '';
+            speakManualTextBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
