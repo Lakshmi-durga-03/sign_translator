@@ -327,3 +327,12 @@ screenshots/
 - Cloud-based model deployment
 - Continuous sentence prediction
 
+## 📌 Project Status
+
+This project is developed as an AI and computer vision-based solution for real-time sign language recognition and accessible communication.
+
+The current implementation supports alphabet-based sign recognition (**A–Z**) along with **Space**, **Delete**, **Nothing**, Speech-to-Text, and Text-to-Speech functionality.
+
+---
+
+
